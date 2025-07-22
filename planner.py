@@ -43,7 +43,7 @@ class AStarPlanner:
                 return self._reconstruct_path(came_from, start_idx, goal_idx)
 
             for neighbor in self._get_neighbors(current):
-                #====================== Change cost function here ======================#
+                #====================== Change cost function here ======================# f(n) = g(n) + h(n) + penalty(n)
                 base_cost = cost_so_far[current] + self._move_cost(current, neighbor)
                 add_penalty = self._alignment_penalty(current, neighbor, start_idx, goal_idx)
 
@@ -58,7 +58,7 @@ class AStarPlanner:
         return None
 
     def heuristic(self, a, b):
-        return 4*math.hypot((a[0] - b[0]), (a[1] - b[1])) # Euclidian Distance
+        return math.hypot((a[0] - b[0]), (a[1] - b[1])) # Euclidian Distance
 
     def _move_cost(self, a, b):
         dx = abs(a[0] - b[0])
@@ -97,7 +97,7 @@ class AStarPlanner:
 #=========================== define penalties ================================#
     
     def _alignment_penalty(self, current, neighbor, start, goal):
-        p_rate = 1 # Hyperparameter
+        p_rate = 0.3 # Hyperparameter
 
         move_vec = np.array([neighbor[0] - start[0], neighbor[1] - start[1]])
         goal_vec = np.array([goal[0] - start[0], goal[1] - start[1]])
