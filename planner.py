@@ -1,5 +1,6 @@
 import heapq
 import math
+import numpy as np
 
 class AStarPlanner:
     """
@@ -33,6 +34,7 @@ class AStarPlanner:
         came_from = {}
         cost_so_far = {start_idx: 0}
 
+
         while open_heap:
             _, cost, current = heapq.heappop(open_heap)
             self.expanded_nodes += 1
@@ -41,7 +43,11 @@ class AStarPlanner:
                 return self._reconstruct_path(came_from, start_idx, goal_idx)
 
             for neighbor in self._get_neighbors(current):
-                new_cost = cost_so_far[current] + self._move_cost(current, neighbor)
+                base_cost = cost_so_far[current] + self._move_cost(current, neighbor)
+                add_penalty = self._alignment_penalty(current, neighbor, start_idx, goal_idx)
+
+                new_cost = base_cost + add_penalty
+
                 if neighbor not in cost_so_far or new_cost < cost_so_far[neighbor]:
                     cost_so_far[neighbor] = new_cost
                     priority = new_cost + self.heuristic(neighbor, goal_idx)
@@ -85,3 +91,22 @@ class AStarPlanner:
         path.append(self._idx_to_pos(start_idx))
         path.reverse()
         return path
+
+#-------------------------define penalties------------------------------#
+    def _alignment_penalty(self, current, neighbor, start, goal):
+        p_rate = 1 # Hyperparameter
+
+        move_vec = np.array([neighbor[0] - start[0], neighbor[1] - start[1]])
+        goal_vec = np.array([goal[0] - start[0], goal[1] - start[1]])
+
+        mag1 = np.linalg.norm(move_vec)
+        mag2 = np.linalg.norm(goal_vec)
+        if mag1 == 0 or mag2 == 0:
+            return 0
+
+        cos = np.dot(move_vec, goal_vec) / (mag1 * mag2)
+        ang_diff = math.acos(np.clip(cos, -1.0, 1.0))
+
+        return ang_diff * self.resolution * p_rate
+
+
