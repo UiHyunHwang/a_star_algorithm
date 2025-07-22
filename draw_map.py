@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 # Configuration
-canvas_size = (2048, 2048)
+canvas_size = (512, 512)
 brush_radius = 5
 output_path = os.path.expanduser("~/a_star_on_map/project/map.png")
 
