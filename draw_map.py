@@ -3,9 +3,9 @@ import numpy as np
 import os
 
 # Configuration
-canvas_size = (1024, 1024)
+canvas_size = (1024, 1024) # Set the size of canvas
 brush_radius = 5
-output_path = os.path.expanduser("~/a_star_algorithm/map.png")
+output_path = os.path.expanduser("~/a_star_on_map/a_star_algorithm/map.png")
 
 
 # Create a white canvas (255 = white)

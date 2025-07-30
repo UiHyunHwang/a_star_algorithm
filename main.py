@@ -2,11 +2,11 @@ import cv2
 import numpy as np
 import time
 import os
-from planner import AStarPlanner
+from planners import AStarPlanner, CentralAStarPlanner, AStarPlanner2, LazyThetaStarPlanner
 from grid_map import GridMap
 
 # === Load binary map ===
-map_path = os.path.expanduser("~/a_star_algorithm/map.png")
+map_path = os.path.expanduser("~/a_star_on_map/a_star_algorithm/map.png")
 img = cv2.imread(map_path, cv2.IMREAD_GRAYSCALE)
 assert img is not None, "map.png failed to load. Check the file path."
 _, binary_map = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
@@ -63,9 +63,12 @@ while True:
         goal_px = goal_points[-1]
         resolution = 1  # meters per pixel
         grid_map = GridMap(grid, resolution)
-        planner = AStarPlanner(start_px, goal_px, grid_map)
+        planner = LazyThetaStarPlanner(start_px, goal_px, grid_map)
+        #= AStarPlanner2(start_px, goal_points, grid_map)
+        #= AStarPlanner(start_px, goal_px, grid_map)
+        #= CentralAStarPlanner(start_px, goal_px, grid_map)
 
-        print("Running A* path planning...")
+        print("Running path planning...")
         start_time = time.time()
         path = planner.plan()
         end_time = time.time()
