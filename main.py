@@ -2,16 +2,18 @@ import cv2
 import numpy as np
 import time
 import os
-from planners import AStarAnglePlanner, AStarDistancePlanner, CentralAStarPlanner, LazyThetaStarPlanner
+from planners import AStarPlanner, AStarAnglePlanner, AStarDistancePlanner, CentralAStarPlanner, LazyThetaStarPlanner
 from grid_map import GridMap
 
+
 # === Load binary map ===
-map_path = os.path.expanduser("~/a_star_on_map/a_star_algorithm/map.png")
+map_path = os.path.expanduser("~/a_star_algorithm/map.png")
 img = cv2.imread(map_path, cv2.IMREAD_GRAYSCALE)
 assert img is not None, "map.png failed to load. Check the file path."
 _, binary_map = cv2.threshold(img, 127, 255, cv2.THRESH_BINARY)
 grid = (binary_map == 255).astype(np.uint8)
 base_img = binary_map.copy()
+
 
 # === Global state ===
 goal_points = []
@@ -27,6 +29,7 @@ add_goal_prompt_pending = False
 all_expanded_nodes = []
 
 cv2.namedWindow("Map")
+
 
 # === Visualization ===
 def draw_paths(vis):
@@ -55,6 +58,7 @@ def draw_expanded_nodes(vis):
     for node in all_expanded_nodes:
         cv2.circle(vis, node, 1, (200, 200, 200), -1)  # light gray
 
+
 # === Mouse callback (mode1) ===
 def mouse_callback(event, x, y, flags, param):
     global start_px, initial_start_px, goal_points, reset_requested
@@ -72,10 +76,11 @@ def mouse_callback(event, x, y, flags, param):
         reset_requested = True
         print("Right-click detected. Resetting.")
 
+
 # === Terminal input (mode2) ===
 def terminal_goal_input():
     global start_px, initial_start_px, new_goal_input_ready, pending_goal, add_goal_prompt_pending
-    while not terminate_flag:
+    while not terminate_flag: # While not entering ESC
         try:
             start_px = None
             initial_start_px = None
@@ -84,16 +89,16 @@ def terminal_goal_input():
             all_expanded_nodes.clear()
 
             sx_sy = input("Enter start (x y): ").strip().split()
+            sx, sy = map(int, sx_sy)
             if len(sx_sy) != 2:
                 raise ValueError
-            sx, sy = map(int, sx_sy)
             start_px = (sx, sy)
             initial_start_px = (sx, sy)
         except:
             print("Invalid input. Aborting.")
             return
 
-        while True:
+        while True: 
             try:
                 gx_gy = input("Enter goal (x y): ").strip().split()
                 if len(gx_gy) != 2:
@@ -118,12 +123,25 @@ def terminal_goal_input():
                     else:
                         print("Please enter 'y' or 'n'.")
 
-                if cont == 'n':
-                    break
             except Exception as e:
                 print("Error:", e)
                 print("Invalid coordinate input. Skipping.")
                 continue
+
+
+# === Planner selection ===
+def create_planner(planner_type, start, goal, grid_map, goal_list):
+    if planner_type == "2":
+        return AStarDistancePlanner(start, goal_list, grid_map)
+    else:
+        planner_class = {
+            "0": AStarPlanner,
+            "1": AStarAnglePlanner,
+            "3": CentralAStarPlanner,
+            "4": LazyThetaStarPlanner,
+        }.get(planner_type, AStarPlanner)
+        return planner_class(start, goal, grid_map)
+
 
 # === Main loop ===
 def main():
@@ -132,7 +150,7 @@ def main():
     global new_goal_input_ready, pending_goal, add_goal_prompt_pending
     global all_expanded_nodes
 
-    planner_type = input("Select planner (1: Angle, 2: Distance, 3: Central, 4: LazyTheta*): ").strip()
+    planner_type = input("Select planner (0: Basic A*, 1: Angle, 2: Distance, 3: Central, 4: LazyTheta*): ").strip()
     mode = input("Select mode (1: mouse click, 2: terminal input): ").strip()
     use_mode2 = (mode == "2")
 
@@ -149,7 +167,7 @@ def main():
         draw_points(vis)
         cv2.imshow("Map", vis)
 
-        key = cv2.waitKey(30)
+        key = cv2.waitKey(1)
         if key == 27:
             terminate_flag = True
             time.sleep(0.1)
@@ -171,15 +189,7 @@ def main():
                 resolution = 1
                 grid_map = GridMap(grid, resolution)
 
-                if planner_type == "2":
-                    planner = AStarDistancePlanner(start_px, goal_points, grid_map)
-                else:
-                    planner_class = {
-                        "1": AStarAnglePlanner,
-                        "3": CentralAStarPlanner,
-                        "4": LazyThetaStarPlanner,
-                    }.get(planner_type, AStarAnglePlanner)
-                    planner = planner_class(start_px, goal_px, grid_map)
+                planner = create_planner(planner_type, start_px, goal_px, grid_map, goal_points)
 
                 print("Planning...")
                 start_time = time.time()
@@ -211,15 +221,7 @@ def main():
             resolution = 1
             grid_map = GridMap(grid, resolution)
 
-            if planner_type == "2":
-                planner = AStarDistancePlanner(start_px, goal_points, grid_map)
-            else:
-                planner_class = {
-                    "1": AStarAnglePlanner,
-                    "3": CentralAStarPlanner,
-                    "4": LazyThetaStarPlanner,
-                }.get(planner_type, AStarAnglePlanner)
-                planner = planner_class(start_px, goal_px, grid_map)
+            planner = create_planner(planner_type, start_px, goal_px, grid_map, goal_points)
 
             print("Planning...")
             start_time = time.time()
